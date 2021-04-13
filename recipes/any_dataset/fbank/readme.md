@@ -105,13 +105,12 @@ Vous pouvez generer ce fichier en utilisant l'outil `kaldi/egs/wsj/s5/utils/utt2
 
 La paramétrisation des données se fait dans le script `feature-extraction.sh`. Ce cript génère deux dossiers :
 - le dossier spécifié dans `feature-out` contenant les features sous format binaire (format kaldi `.ark`). Ce dossier peut être lourd et sera fortement utilisé en lecture/écriture : nous déconseillons l'utilisation d'un SSD.
-- le dossier spécifié dans `data-out` contenant les metadonnées (`wav.scp`, `utt2spk` et `spk2utt` ...) utilisé pour lire les features (cf [section sur fichiers ark et scp](#ark-&-scp)).
+- le dossier`{data_in}_no_sil` contenant les metadonnées (`wav.scp`, `utt2spk` et `spk2utt` ...) des features extraites.
 
 Ce script comporte les arguments suivant :
 - `--help` affiche l'aide
-- `--kaldi-path` le path COMPLET vers l'installation de kaldi
+- `--kaldi-root` le path COMPLET vers l'installation de kaldi
 - `--data-in` permet de spécifier le dossier contenant les fichiers `wav.scp`, `utt2spk` et `spk2utt`.
-- `--data-out` permet de spécifier le dossier de sortie des metadonnées.
 - `--feature-out` permet de spécifier le dossier de sortie de features (peut être lourd)
 - `--nj` permet de spécifier le nombre de process lancé en parallel. Attention, un nombre de process supérieur aux nombre de thread du CPU peut entrainer un rallentissement significatif.
 
@@ -127,16 +126,17 @@ La paramétrisation des données peut parfois nécéssiter de la data augmentati
 
 Ce script fonctionne de manière similaire à `feature-extraction.sh` et comporte des arguments similaires :
 - `--help` affiche l'aide
-- `--kaldi-path` le path COMPLET vers l'installation de kaldi
+- `--kaldi-root` le path COMPLET vers l'installation de kaldi
 - `--data-in` permet de spécifier le dossier contenant les fichiers `wav.scp`, `utt2spk` et `spk2utt`.
-- `--data-out` permet de spécifier le dossier de sortie des metadonnées.
 - `--feature-out` permet de spécifier le dossier de sortie de features (peut être lourd)
 - `--nj` permet de spécifier le nombre de process lancé en parallel. Attention, un nombre de process supérieur aux nombre de thread du CPU peut entrainer un rallentissement significatif.
 - `--rirs-root` permet de spécifier le dossier contenant le dataset rirs noises (https://www.openslr.org/28/)
 - `-musan-root` permet de spécifier le dossier contenant le dataset musan (http://www.openslr.org/17/)
 
+Le dossier `{data_in}_combined_no_sil` sera crée et contiendra les metadonnées des features extraites.
+
 Exemple:
 
 ```
-./data-augmentation.sh --nj 8 --data-in data/train --data-out data/train-aug-no-sil --features-out features-aug/ --kaldi-root /home/me/kaldi --rirs-root RIRS_NOISES --musan-root musan
+./data-augmentation.sh --nj 8 --data-in data/train --features-out features-aug/ --kaldi-root /home/me/kaldi --rirs-root RIRS_NOISES --musan-root musan
 ```

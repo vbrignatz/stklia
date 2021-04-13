@@ -1,9 +1,8 @@
 # STKLIA
 
-⚠️ **This is a work in progress, your feedback is welcomed** ⚠️  
-✅ Checkout our [trello](https://trello.com/b/MGHEfOjL) to see our current work.
+This toolkit is meant to ease the use of ResNets applied for speaker verification. It can be used to train and test a system, extract x-vectors and help with data preparation.
 
-## Trivia
+# Trivia
 
 The overall pipeline for training a speaker representation network has two main components, which are referred to in this repo as a generator and a classifier. The generator is the network which actually produces the embedding:
 
@@ -15,37 +14,33 @@ Acting on this embedding is the classifier:
 
 In a classic scenario, this classifier is usually a feed forward network which projects to the number of classes, and trained using Cross Entropy Loss. This repo includes some alternate options such as angular penalty losses.
 
-## How to install
+# How to install
 To install the Simple-tklia toolkit, do the following steps:
 
 0. We recomend using a conda venv : https://anaconda.org/anaconda/conda
 1. Install PyTorch (http://pytorch.org/).
 2. Clone the Simple-tklia repository:
 ```sh
-git clone https://github.com/Chaanks/stklia
+git clone https://github.com/vbrignatz/stklia
 ```
 3.  Go into the project folder and Install the needed packages with:
 ```sh
 pip install -r requirement.txt
 ```
 
-## Exemples
-
-Exemples script can be found in [exemples/](https://github.com/Chaanks/stklia/tree/dev/exemples/). These exemples are ready to be run on the LIA's servers. We recommend trying them out before going further 😉.
-
-## Data preparation
+# Data preparation
 
 To use this toolkit, please prepare your data with [kaldi](https://kaldi-asr.org). When specifying a kaldi dataset folder to our toolkit, please ensure that this folder contains thes files `feats.scp`, `utt2spk`, `spk2utt`.  
-Tutorials on how to prepare some popular datasets can be found [here](https://github.com/Chaanks/stklia/tree/master/recipes).
+An easy way to prepare the datasets can be found [here](https://github.com/vbrignatz/stklia/tree/master/recipes/any_dataset/fbank).
 
-## How to run
+# Usage
 
-The training and testing of a model is handled with the script `run.py` :
+The training and testing of a model is handled by the script `run.py` :
 ```sh
 python run.py [-h] -m {train,test} --cfg CFG [--checkpoint CHECKPOINT]
 ```
 
-### Train a model
+## Train a model
 
 To train a model, simply specify the train mode and a configuration file to `run.py`.  
 Exemple :
@@ -54,14 +49,14 @@ Exemple :
 python run.py --mode train --cfg config/example_speaker.cfg
 ```
 
-In order to resume an experiment from an existing checkpoint interval, add the `--checkpoint` arguement.  
+In order to resume an experiment from an existing checkpoint interval, add the `--checkpoint` argument.  
 Exemple:
 
 ```sh
 python run.py --mode train --cfg config/example_speaker.cfg --checkpoint 1000
 ```
 
-### Test a model
+## Test a model
 
 To test a model, simply specify the test mode and a configuration file to `run.py`.  
 Exemple :
@@ -75,7 +70,7 @@ Exemple :
 python run.py --mode test --cfg config/example_speaker.cfg --checkpoint 1250
 ```
 
-### Tensorboard
+## Tensorboard
 
 Training and validation are saved in a tensorboard in the folder `stklia/runs/`. To visualize the data, use the command :
 ```bash
@@ -89,7 +84,13 @@ tensorboard --logdir runs/ --port <your_port> --bind_all
 
 > Note: make sure to be in the conda venv or to have tensorboard installed
 
-###  Extract X-Vectors
+##  Extract X-Vectors
+
+Two scripts can be used to extract x-vectors. 
+- `extract.py` is used to extract a kaldi dataset (meaning a folder containing the kaldi metadata).
+- `wav2xv.py` is used to extract any list of wav files (note that you will still need to have kaldi installed to use this script).
+
+### Extract a Kaldi dataset
 
 To extract the x-vector of a dataset, use the extract.py script with the following command :
 ```sh
@@ -101,11 +102,18 @@ python extract.py [-h] -m MODELDIR [--checkpoint CHECKPOINT] -d DATA [-f {ark,tx
  - `--data` can be used in 2 manners : You can specify a kaldi folder, and the folder's data will be extracted. Or, you can simply specify test/eval/train, and the corresponding dataset of `experiment_settings.cfg` will be extracted.
  - `--format` is used to specify the output format of the xvectors. It can be kaldi (`ark`), text (`txt`), or pytorch (`pt`). Default is kaldi.
 
-## Configuration files
-An example .cfg file for speaker training is provided below and in configs/example_speaker.cfg:
+### Extract a list of wav files
 
+To extract a list of wav file, use the command :
+```
+wav2xv.py [-h] --model MODEL [--checkpoint CHECKPOINT] [--output OUTPUT] --kaldi KALDI wav [wav ...]
+```
 
-### Dataset specification
+# Configuration files
+
+An example .cfg file for speaker training is provided below and in `cfg/example_speaker.cfg` :
+
+## Dataset specification
 
 These are the locations of the datasets.
 `train` field is mandatory for train mode.  
@@ -137,7 +145,7 @@ The format of trials is as follows:
 0 <utterance_a> <utterance_c>
 ```
 
-### Hyperparameters
+## Hyperparameters
 
 Most of these configurable hyper-parameters are fairly self-explanatory.
 
@@ -155,7 +163,7 @@ scheduler_lambda = 0.5 # multiplies lr by this value at each step above
 multi_gpu = False # dataparallel
 ```
 
-### Model
+## Model
 
 This section is used to specify the model size, the embeddings size, pooling mode.
 Pooling can be `min`, `max`, `mean`, `std`, `statistical`.
@@ -169,7 +177,7 @@ zero_init_residual = True
 pooling = statistical
 ```
 
-### Outputs
+## Outputs
 
 
 The model_dir is the folder in which models are stored. At every checkpoint_interval iterations, both the generator and classifier will be stored as a .pt model inside this folder. Each model has the form: g_\<iterations\>.pt, c_\<iterations\>.pt. This is relevant to the above section of how to resume from a previous checkpoint. For example, to resume from the 1000th iteration, both g_1000.pt, c_1000.pt must exist in checkpoints_dir.
@@ -182,7 +190,7 @@ checkpoints_dir = checkpoints # checkpoints will be stored in <model_dir>/<check
 log_interval = 1 
 ```
 
-## Slurm recommendation
+# Slurm recommendation
 
 With a batch size of `128`, since batch size too big can lead to Cuda out of memory.
 
