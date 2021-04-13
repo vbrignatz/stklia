@@ -1,5 +1,9 @@
-test.py
-speedtest.py
+slurm*
+run.sh
+*.out
+cfg/*
+recipes/any_dataset/fbank/data
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
