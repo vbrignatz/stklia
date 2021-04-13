@@ -19,12 +19,17 @@ To install the Simple-tklia toolkit, do the following steps:
 
 0. We recomend using a conda venv : https://anaconda.org/anaconda/conda
 1. Install PyTorch (http://pytorch.org/).
-2. Clone the Simple-tklia repository:
-```sh
-git clone https://github.com/vbrignatz/stklia
+2. Clone the Simple-tklia repository and got in the project folder
+3. Install the requirements
+
+The commands are as below :
+
 ```
-3.  Go into the project folder and Install the needed packages with:
-```sh
+git clone https://github.com/vbrignatz/stklia.git
+cd stklia
+conda create -n stklia-venv python=3.8
+conda activate stklia-venv
+conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
 pip install -r requirement.txt
 ```
 
@@ -106,7 +111,15 @@ python extract.py [-h] -m MODELDIR [--checkpoint CHECKPOINT] -d DATA [-f {ark,tx
 
 To extract a list of wav file, use the command :
 ```
-wav2xv.py [-h] --model MODEL [--checkpoint CHECKPOINT] [--output OUTPUT] --kaldi KALDI wav [wav ...]
+python wav2xv.py [-h] --model MODEL [--checkpoint CHECKPOINT] [--output OUTPUT] --kaldi KALDI wav [wav ...]
+```
+
+Exemple :
+
+```
+python python wav2xv.py --model exemples/trained-model/ --kaldi <path/to/kaldi/> exemples/wavs/id09272/00001.wav exemples/wavs/id09272/00002.wav
+ou
+python python wav2xv.py --model exemples/trained-model/ --kaldi <path/to/kaldi/> exemples/wavs/wavs.lst
 ```
 
 # Configuration files

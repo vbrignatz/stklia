@@ -35,12 +35,19 @@ optional arguments:
 # --kaldi KALDI           /local_disk/arges/jduret/kaldi
 # wav2xv.py $(ls *.wav) --model /local_disk/arges/vbrignatz/tklia/exp/multilang_std --kaldi /local_disk/arges/jduret/kaldi
 
+def read_lst(filename):
+    res = []
+    with open(filename, 'r') as f:
+        for line in f:
+            res.append(Path(line.rstrip()))
+    return res
+
 if __name__ == "__main__":
     # Arguments parsing
     parser = argparse.ArgumentParser(description='Extract the xvectors of a file.')
 
     parser.add_argument('wav', type=str, nargs='+',
-        help="The wav file(s) to extract the x-vector from.")
+        help="The wav file(s) to extract the x-vector from or/and a file containing a list of wav files.")
     parser.add_argument("--model", type=str, required=True,
         help="The model directory to use. should contain expirement_settings.cfg")
     parser.add_argument('--checkpoint', '--resume-checkpoint', type=int, default=-1,
@@ -60,7 +67,15 @@ if __name__ == "__main__":
     args.model  = Path(args.model)
     args.output = Path(args.output)
     args.kaldi  = Path(args.kaldi)
-    args.wav    = [ Path(f) for f in args.wav ]
+
+    # get the wav argument : if lst file, read the content, if wav file juts add it
+    tmp = []
+    for elt in args.wav:
+        if elt[-4:] == ".wav":
+            tmp.append(Path(elt))
+        else:
+            tmp.extend(read_lst(elt))
+    args.wav    = list(set(tmp))
 
     # Create .tmp dir and subdirectories
     print("Creating tmp folders")
@@ -98,7 +113,7 @@ if __name__ == "__main__":
             f.write(f"{wav.stem} {wav.stem}\n")
 
     # Call feature-extraction on .tmp/data/
-    cmd = f'./feature-extraction.sh --nj 1 --data-in {data_folder.absolute()} --features-out {feature_folder.absolute()} --kaldi-root {args.kaldi.absolute()} --vad-out {vad_folder.absolute()} --exp-out {exp_folder.absolute()}'
+    cmd = f'./feature-extraction.sh --nj 1 --data-in {data_folder.absolute()} --features-out {feature_folder.absolute()} --kaldi-root {args.kaldi.absolute()} --exp-out {exp_folder.absolute()}'
     print(f"running :\n{cmd}")
 
     # Since the script feature-extraction.sh works in relative paths,
