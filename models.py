@@ -74,6 +74,10 @@ class ResNet(nn.Module):
                  zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
+
+        # a dummy parameter to save the device
+        self.dummy_param = nn.Parameter(torch.empty(0))
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -146,7 +150,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
-        x = self.conv1(x)
+        x = self.conv1(x.to(self.dummy_param.device))
         x = self.bn1(x)
         x = self.relu(x)
         

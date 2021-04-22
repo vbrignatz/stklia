@@ -8,6 +8,15 @@ Ce dossier permet la paramétrisation de n'importe quel dataset avec Kaldi. Pour
 - Étape 3 : Génerer les fichiers wav.scp, utt2spk, spk2utt
 - Étape 4 : Lancer la paramétrisation
 
+# Exemple
+
+To extract the features (fbanks) of the wavs files from the exemples folder, we can use the `feature-extraction.sh` :
+
+```
+cd receipes/any_dataset/fbank/
+./feature-extraction.sh --nj 1 --data-in ../../../exemples/metadata/ --features-out ../../../exemples/feats/ --kaldi-root <kaldi_root_dir>
+```
+
 # Étape 1
 
 Dans cette premiere étape, nous installons Kaldi.

@@ -56,7 +56,7 @@ if __name__ == "__main__":
         raise TypeError("This should not append, contact dev :(")
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    ds_extract = dataset.make_kaldi_ds(data_path, seq_len=None, evaluation=True)
+    ds_extract = dataset.make_kaldi_train_ds(data_path, seq_len=None)
 
     cuda_test()
     device = get_device(not args.no_cuda)
@@ -86,9 +86,8 @@ if __name__ == "__main__":
 
         with kaldi_io.open_or_fd(ark_scp_xvector, mode) as f:
             with torch.no_grad():
-                for i in tqdm(range(len(ds_extract))):
-                    feats, _, utt = ds_extract.__getitem__(i)
-                    feats = feats.unsqueeze(0).unsqueeze(1).to(device)
+                for feats, utt in tqdm(ds_extract.get_utt_feats()):
+                    feats = feats.unsqueeze(0).unsqueeze(1)
                     embeds = generator(feats).cpu().numpy()
                     kaldi_io.write_vec_flt(f, embeds[0], key=utt)
 
@@ -96,9 +95,8 @@ if __name__ == "__main__":
         out_dir = out_dir / "xvectors_pt/"
         out_dir.mkdir(parents=True, exist_ok=True)
         with torch.no_grad():
-            for i in tqdm(range(len(ds_extract))):
-                feats, _, utt = ds_extract.__getitem__(i)
-                feats = feats.unsqueeze(0).unsqueeze(1).to(device)
+            for feats, utt in tqdm(ds_extract.get_utt_feats()):
+                feats = feats.unsqueeze(0).unsqueeze(1)
                 embeds = generator(feats).cpu().numpy()
                 torch.save(embeds[0], out_dir / f"{utt}.pt")
     

@@ -25,7 +25,7 @@ from parser import fetch_config
 from cuda_test import cuda_test, get_device
 from train_resnet import train
 from test_resnet import score_utt_utt
-from models import resnet34
+from models import resnet34, NeuralNetAMSM
 
 if __name__ == "__main__":
 
@@ -54,14 +54,17 @@ if __name__ == "__main__":
     cuda_test()
     device = get_device(not args.no_cuda)
 
+    generator = resnet34(args)
+    generator = generator.to(device)
+
     # TRAIN
     if args.mode == "train":
         assert args.train_data_path, "No training dataset given in train mode"
-        ds_train = dataset.make_kaldi_ds(args.train_data_path, seq_len=args.max_seq_len, evaluation=False, trials=None)
+        ds_train = dataset.make_kaldi_train_ds(args.train_data_path, seq_len=args.max_seq_len)
         dl_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
 
         if args.eval_data_path and args.eval_trials_path:
-            ds_val = dataset.make_kaldi_ds(args.eval_data_path, seq_len=None, evaluation=True, trials=args.eval_trials_path)
+            ds_val = dataset.make_kaldi_trial_ds(args.eval_data_path, trials=args.eval_trials_path)
         else:
             ds_val = None
             
@@ -74,12 +77,20 @@ if __name__ == "__main__":
             args.log_file.unlink()
         logger.add(args.log_file, format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}", backtrace=False, diagnose=False)
 
-        train(args, dl_train, device, ds_val)
+        # Classifier definition
+        classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
+        classifier = classifier.to(device)
+        logger.info("num_classes: " + str(ds_train.num_classes))
+
+        generator.train()
+        classifier.train()
+
+        train(args, generator, classifier, dl_train, device, ds_val)
 
     # TEST
     if args.mode == "test":
         assert args.test_data_path and args.test_trials_path, "No test dataset or trials given in test mode"
-        ds_test = dataset.make_kaldi_ds(args.test_data_path, seq_len=None, evaluation=True, trials=args.test_trials_path)
+        ds_test = dataset.make_kaldi_trial_ds(args.test_data_path, trials=args.test_trials_path)
 
         # Load generator
         if args.checkpoint < 0:
@@ -90,9 +101,7 @@ if __name__ == "__main__":
             g_path = args.checkpoints_dir / "g_{}.pt".format(args.checkpoint)
             g_path_test = g_path
 
-        model = resnet34(args)
-        model.load_state_dict(torch.load(g_path), strict=False)
-        model = model.to(device)
+        
+        generator.load_state_dict(torch.load(g_path), strict=False)
 
-        # TODO : support score_spk_utt
-        score_utt_utt(model, ds_test, device)
+        score_utt_utt(generator, ds_test)

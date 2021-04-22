@@ -3,6 +3,8 @@ run.sh
 *.out
 cfg/*
 recipes/any_dataset/fbank/data
+exemples/feats
+exemples/*_no_sil
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

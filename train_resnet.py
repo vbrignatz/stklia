@@ -30,23 +30,9 @@ def get_lr(optimizer):
         return param_group['lr']
 
 @logger.catch
-def train(args, dataloader_train, device, dataset_validation=None):
+def train(args, generator, classifier, dataloader_train, device, dataset_validation=None):
     # Tensorflow logger
     writer = SummaryWriter(comment='_{}'.format(args.model_dir.name))
-    num_classes = dataloader_train.dataset.num_classes
-
-    # loguru
-    logger.info("num_classes: " + str(num_classes))
-
-    # Generator and classifier definition
-    generator = resnet34(args)
-    classifier = NeuralNetAMSM(args.emb_size, num_classes)
-
-    generator.train()
-    classifier.train()
-
-    generator = generator.to(device)
-    classifier = classifier.to(device)
 
     # Load the trained model if we continue from a checkpoint
     start_iteration = 0
@@ -72,7 +58,7 @@ def train(args, dataloader_train, device, dataset_validation=None):
         dpp_generator = nn.DataParallel(generator).to(device)
     
     if dataset_validation is not None:
-        best_eer = {v.name:{'eer':100, 'ite':-1} for v in dataset_validation.trials} # best eer of all iterations
+        best_eer = {'eer':100, 'ite':-1}
 
     start = time.process_time()
     for iterations in range(start_iteration, args.num_iterations + 1):
@@ -134,18 +120,13 @@ def train(args, dataloader_train, device, dataset_validation=None):
             # Testing the saved model
             if dataset_validation is not None:
                 logger.info('Model Evaluation')
-                test_res = score_utt_utt(generator, dataset_validation, device)
-                for veri_pair, res in test_res.items():
-                    eer = res['eer']
-                    logger.info(f'EER on {veri_pair}: {eer}')
-                    writer.add_scalar(f'{veri_pair}_EER', eer, iterations)
-                    if eer < best_eer[veri_pair]["eer"]:
-                        best_eer[veri_pair]["eer"] = eer
-                        best_eer[veri_pair]["ite"] = iterations
-                msg = ""
-                for veri, vals in best_eer.items():
-                    msg += f"\nBest score for {veri} is at iteration {vals['ite']} : {vals['eer']} eer"
-                logger.success(msg)
+                eer = score_utt_utt(generator, dataset_validation)['eer']
+                logger.info(f'EER : {eer}')
+                writer.add_scalar(f'EER', eer, iterations)
+                if eer < best_eer["eer"]:
+                    best_eer["eer"] = eer
+                    best_eer["ite"] = iterations
+                logger.success(f"\nBest score is at iteration {best_eer['ite']} : {best_eer['eer']} eer")
             logger.info(f"Saved checkpoint at iteration {iterations}")
 
     # Final model saving
