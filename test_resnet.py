@@ -24,6 +24,7 @@ from loguru import logger
 import dataset
 import data_io
 from models import resnet34
+from extract import save_xvectors
 
 # @logger.catch
 def compute_unique_utt_xvec(generator, trial_ds):
@@ -70,25 +71,8 @@ def compute_min_dcf(fpr, tpr, thresholds, p_target=0.01, c_miss=1, c_fa=1):
     min_dcf = min_c_det / c_def
     return min_dcf
 
-def score_utt_utt(generator, ds_test, mindcf=False):
-    """ 
-        Score the model on the trials of type :
-        <spk> <utt> 0/1
-    """
-
-    utt2xv = compute_unique_utt_xvec(generator, ds_test)
-
-    targets = np.asarray(ds_test.tar_l, dtype=int)
-
-    xv = np.vstack(list(utt2xv.values()))
-    xv = normalize(xv, axis=1)
-
-    utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
-
-    emb0 = np.array([utt2xv_norm[k] for k in ds_test.utt1_l])
-    emb1 = np.array([utt2xv_norm[k] for k in ds_test.utt2_l])
-
-    scores = paired_distances(emb0, emb1, metric='cosine')
+def score_xvectors(embedings_1, embedings_2, targets, mindcf=False):
+    scores = paired_distances(embedings_1, embedings_2, metric='cosine')
     fpr, tpr, thresholds = roc_curve(1 - targets, scores, pos_label=1, drop_intermediate=False)
     eer = eer_from_ers(fpr, tpr)*100
 
@@ -101,3 +85,29 @@ def score_utt_utt(generator, ds_test, mindcf=False):
         print(f'EER :{eer:.4f}%')
         res = {"eer":eer}
     return res
+
+def extract_and_score(generator, ds_test, mindcf=False, output=None):
+    """ 
+        Score the model on the trials of type :
+        <utt> <utt> 0/1
+
+        Save the extracted xv into output filename is precised (can be .ark or .txt).
+    """
+
+    utt2xv = compute_unique_utt_xvec(generator, ds_test)
+
+    targets = np.asarray(ds_test.tar_l, dtype=int)
+
+    xv = np.vstack(list(utt2xv.values()))
+    xv = normalize(xv, axis=1)
+
+    utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
+
+    if output != None:
+        save_xvectors(filename, utt2xv_norm)
+
+    emb0 = np.array([utt2xv_norm[k] for k in ds_test.utt1_l])
+    emb1 = np.array([utt2xv_norm[k] for k in ds_test.utt2_l])
+
+    return score_xvectors(emb0, emb1, targets, mindcf)
+

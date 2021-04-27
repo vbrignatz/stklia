@@ -23,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import dataset
 from models import resnet34, NeuralNetAMSM
-from test_resnet import score_utt_utt
+from test_resnet import extract_and_score
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
@@ -120,7 +120,7 @@ def train(args, generator, classifier, dataloader_train, device, dataset_validat
             # Testing the saved model
             if dataset_validation is not None:
                 logger.info('Model Evaluation')
-                eer = score_utt_utt(generator, dataset_validation)['eer']
+                eer = extract_and_score(generator, dataset_validation)['eer']
                 logger.info(f'EER : {eer}')
                 writer.add_scalar(f'EER', eer, iterations)
                 if eer < best_eer["eer"]:

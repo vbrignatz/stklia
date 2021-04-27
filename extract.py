@@ -24,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint', '--resume-checkpoint', type=int, default=-1,
                             help="Model Checkpoint to use. Default (-1) : use the last one ")
     parser.add_argument("-d", '--data', type=str, required=True, help="Path to the kaldi data folder to extract (Should contain spk2utt, utt2spk and feats.scp).")
-    parser.add_argument("-f", "--format", type=str, choices=["ark", "txt", "pt"], default="ark", help="The output format you want the x-vectors in.")
+    parser.add_argument("-f", "--format", type=str, choices=["ark", "txt"], default="ark", help="The output format you want the x-vectors in.")
 
     args = parser.parse_args()
     args.modeldir = Path(args.modeldir)
@@ -75,28 +75,22 @@ if __name__ == "__main__":
     generator = generator.to(device)
     generator.eval()
 
-    # Extract xv
-    if args.format in ["ark", "txt"]:
-        if args.format == "ark":
-            ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{out_dir}/xvectors.ark,{out_dir}/xvectors.scp'
-            mode = "wb"
-        if args.format == "txt":
-            ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{out_dir}/xvectors.txt'
-            mode = "w"
+    utt2xv = {}
+    for feats, utt in tqdm(ds_extract.get_utt_feats()):
+        feats = feats.unsqueeze(0).unsqueeze(1)
+        embeds = generator(feats).cpu().numpy()
+        utt2xv[utt] = embeds
 
-        with kaldi_io.open_or_fd(ark_scp_xvector, mode) as f:
-            with torch.no_grad():
-                for feats, utt in tqdm(ds_extract.get_utt_feats()):
-                    feats = feats.unsqueeze(0).unsqueeze(1)
-                    embeds = generator(feats).cpu().numpy()
-                    kaldi_io.write_vec_flt(f, embeds[0], key=utt)
-
-    if args.format == "pt":
-        out_dir = out_dir / "xvectors_pt/"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        with torch.no_grad():
-            for feats, utt in tqdm(ds_extract.get_utt_feats()):
-                feats = feats.unsqueeze(0).unsqueeze(1)
-                embeds = generator(feats).cpu().numpy()
-                torch.save(embeds[0], out_dir / f"{utt}.pt")
+    save_xvectors(f"{args.out_dir}/xvectors.{args.format}", utt2xv)
     
+def save_xvectors(filename, utt2xv):
+    if filename[-3:] == "ark":
+        ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{filename},{filename[-3:]}scp'
+        mode = "wb"
+    if filename[-3:] == "txt":
+        ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{filename}'
+        mode = "w"
+
+    with kaldi_io.open_or_fd(ark_scp_xvector, mode) as f:
+        for utt, xv in utt2xv.items():
+            kaldi_io.write_vec_flt(f, xv, key=utt)
