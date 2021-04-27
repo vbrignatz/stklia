@@ -26,7 +26,7 @@ import data_io
 from models import resnet34
 
 # @logger.catch
-def compute_unique_utt_xvec(generator, trial_ds):
+def compute_unique_utt_xvec(generator, trial_ds, device=torch.device("cuda")):
     """
         TODO Extract the x-vectors only for sessions required by trial.
     """
@@ -38,7 +38,7 @@ def compute_unique_utt_xvec(generator, trial_ds):
     with torch.no_grad():
         for utt, feats in trial_ds.unique_feats.items():
             feats = feats.unsqueeze(0).unsqueeze(1)
-            xv = generator(feats).cpu().numpy()
+            xv = generator(feats.to(device)).cpu().numpy()
             all_xv[utt] = xv
     
     # set the model in train mode

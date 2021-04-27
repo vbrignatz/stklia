@@ -23,9 +23,9 @@ from torch.utils.data import DataLoader
 import dataset
 from parser import fetch_config
 from cuda_test import cuda_test, get_device
-from train_resnet import train
+from train_resnet import train, train_contrastive
 from test_resnet import score_utt_utt
-from models import resnet34, NeuralNetAMSM
+from models import resnet34, NeuralNetAMSM, ContrastLayer
 
 if __name__ == "__main__":
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # TRAIN
     if args.mode == "train":
         assert args.train_data_path, "No training dataset given in train mode"
-        ds_train = dataset.make_kaldi_train_ds(args.train_data_path, seq_len=args.max_seq_len)
+        ds_train = dataset.make_kaldi_contrast_ds(args.train_data_path, seq_len=args.max_seq_len)
         dl_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
 
         if args.eval_data_path and args.eval_trials_path:
@@ -78,14 +78,15 @@ if __name__ == "__main__":
         logger.add(args.log_file, format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}", backtrace=False, diagnose=False)
 
         # Classifier definition
-        classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
+        # classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
+        classifier = ContrastLayer()
         classifier = classifier.to(device)
         logger.info("num_classes: " + str(ds_train.num_classes))
 
         generator.train()
         classifier.train()
 
-        train(args, generator, classifier, dl_train, device, ds_val)
+        train_contrastive(args, generator, classifier, dl_train, device, ds_val)
 
     # TEST
     if args.mode == "test":

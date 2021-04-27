@@ -76,6 +76,7 @@ if __name__ == "__main__":
     generator.eval()
 
     # Extract xv
+    # TODO : don't extract duplicates
     if args.format in ["ark", "txt"]:
         if args.format == "ark":
             ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{out_dir}/xvectors.ark,{out_dir}/xvectors.scp'
