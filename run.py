@@ -24,7 +24,7 @@ import dataset
 from parser import fetch_config
 from cuda_test import cuda_test, get_device
 from train_resnet import train, train_contrastive
-from test_resnet import score_utt_utt
+from test_resnet import score_utt_utt, score_contrastive
 from models import resnet34, NeuralNetAMSM, ContrastLayer
 
 if __name__ == "__main__":
@@ -57,6 +57,9 @@ if __name__ == "__main__":
     generator = resnet34(args)
     generator = generator.to(device)
 
+    classifier = ContrastLayer()
+    classifier = classifier.to(device)
+
     # TRAIN
     if args.mode == "train":
         assert args.train_data_path, "No training dataset given in train mode"
@@ -79,8 +82,6 @@ if __name__ == "__main__":
 
         # Classifier definition
         # classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
-        classifier = ContrastLayer()
-        classifier = classifier.to(device)
         logger.info("num_classes: " + str(ds_train.num_classes))
 
         generator.train()
@@ -100,9 +101,10 @@ if __name__ == "__main__":
         else:
             print('use checkpoint {}'.format(args.checkpoint))
             g_path = args.checkpoints_dir / "g_{}.pt".format(args.checkpoint)
-            g_path_test = g_path
-
+            ph_path = args.checkpoints_dir / "c_{}.pt".format(args.checkpoint)
         
         generator.load_state_dict(torch.load(g_path), strict=False)
+        classifier.load_state_dict(torch.load(ph_path), strict=False)
 
-        score_utt_utt(generator, ds_test)
+        score_contrastive(generator, classifier, ds_test)
+        # score_utt_utt(generator, ds_test)

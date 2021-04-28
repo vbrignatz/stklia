@@ -101,3 +101,48 @@ def score_utt_utt(generator, ds_test, mindcf=False):
         print(f'EER :{eer:.4f}%')
         res = {"eer":eer}
     return res
+
+def score_contrastive(generator, projection_head, ds_test, mindcf=False):
+    """ 
+        Score the model on the trials of type :
+        <spk> <utt> 0/1
+    """
+
+    generator.eval()
+    projection_head.eval()
+
+    utt2xv = {}
+
+    with torch.no_grad():
+        for utt, feats in ds_test.unique_feats.items():
+            feats = feats.unsqueeze(0).unsqueeze(1)
+            xv = projection_head(generator(feats.to(torch.device("cuda")))).cpu().numpy()
+            utt2xv[utt] = xv
+    
+    # set the model in train mode
+    projection_head.train()
+    generator.train()
+
+    targets = np.asarray(ds_test.tar_l, dtype=int)
+
+    xv = np.vstack(list(utt2xv.values()))
+    xv = normalize(xv, axis=1)
+
+    utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
+
+    emb0 = np.array([utt2xv_norm[k] for k in ds_test.utt1_l])
+    emb1 = np.array([utt2xv_norm[k] for k in ds_test.utt2_l])
+
+    scores = paired_distances(emb0, emb1, metric='cosine')
+    fpr, tpr, thresholds = roc_curve(1 - targets, scores, pos_label=1, drop_intermediate=False)
+    eer = eer_from_ers(fpr, tpr)*100
+
+    if mindcf:
+        mindcf1 = compute_min_dcf(fpr, tpr, thresholds, p_target=0.01)
+        mindcf2 = compute_min_dcf(fpr, tpr, thresholds, p_target=0.001)
+        print(f'EER :{eer:.4f}%  minDFC p=0.01 :{mindcf1}  minDFC p=0.001 :{mindcf2}  ')
+        res = {"eer":eer, "mindcf1":mindcf1, "mindcf2":mindcf2}
+    else:
+        print(f'EER :{eer:.4f}%')
+        res = {"eer":eer}
+    return res

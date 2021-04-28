@@ -23,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import dataset
 from models import resnet34, NeuralNetAMSM, ContrastLayer
-from test_resnet import score_utt_utt
+from test_resnet import score_utt_utt, score_contrastive
 
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
@@ -186,7 +186,7 @@ def train_contrastive(args, generator, projection_head, dataloader_train, device
             if args.multi_gpu:
                 embeds = dpp_generator(features)
             else:
-                embeds = generator(f1)
+                embeds = generator(features)
             embeds = projection_head(embeds)
 
             # Labels calculation
@@ -216,8 +216,10 @@ def train_contrastive(args, generator, projection_head, dataloader_train, device
             loss = criterion(logits, labels)
 
             # Backpropagationclassifier
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
             avg_loss += loss.item()
         
         avg_loss /= len(dataloader_train)
@@ -248,7 +250,7 @@ def train_contrastive(args, generator, projection_head, dataloader_train, device
             # Testing the saved model
             if dataset_validation is not None:
                 logger.info('Model Evaluation')
-                eer = score_utt_utt(generator, dataset_validation)['eer']
+                eer = score_contrastive(generator, projection_head, dataset_validation)['eer']
                 logger.info(f'EER : {eer}')
                 writer.add_scalar(f'EER', eer, iterations)
                 if eer < best_eer["eer"]:
