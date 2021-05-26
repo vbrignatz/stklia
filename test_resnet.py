@@ -96,18 +96,21 @@ def extract_and_score(generator, ds_test, mindcf=False, output=None):
 
     utt2xv = compute_unique_utt_xvec(generator, ds_test)
 
-    targets = np.asarray(ds_test.tar_l, dtype=int)
-
     xv = np.vstack(list(utt2xv.values()))
     xv = normalize(xv, axis=1)
-
     utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
 
     if output != None:
         save_xvectors(filename, utt2xv_norm)
 
-    emb0 = np.array([utt2xv_norm[k] for k in ds_test.utt1_l])
-    emb1 = np.array([utt2xv_norm[k] for k in ds_test.utt2_l])
+    all_res = {}
+    for i in range(len(ds_test)):
+        c_trial = ds_test[i]
+        targets = np.asarray(c_trial.targets, dtype=int)
 
-    return score_xvectors(emb0, emb1, targets, mindcf)
+        emb_enroll = np.array([utt2xv_norm[k] for k in c_trial.enrolls])
+        emb_test = np.array([utt2xv_norm[k] for k in c_trial.tests])
+
+        all_res[c_trial.name] = score_xvectors(emb_enroll, emb_test, targets, mindcf)
+    return all_res
 

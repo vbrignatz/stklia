@@ -30,7 +30,7 @@ def fetch_config(args, verbose=False):
     args.generator_lr        = config['Hyperparams'].getfloat('generator_lr', fallback=0.2)
     args.classifier_lr       = config['Hyperparams'].getfloat('classifier_lr', fallback=0.2)
     args.batch_size          = config['Hyperparams'].getint('batch_size', fallback=400)
-    args.max_seq_len         = config['Hyperparams'].getint('seq_len', fallback=400)
+    args.max_seq_len         = config['Hyperparams'].getint('max_seq_len', fallback=400)
     args.no_cuda             = config['Hyperparams'].getboolean('no_cuda', fallback=False)
     args.seed                = config['Hyperparams'].getint('seed', fallback=123)
     args.num_iterations      = config['Hyperparams'].getint('num_iterations', fallback=50000)
