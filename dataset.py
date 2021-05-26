@@ -69,7 +69,6 @@ class TrialDataset(Dataset):
             unique_feats[utt] = torch.FloatTensor(read_mat(self.utt2path[utt]))
         return unique_feats
 
-# Dataset class
 class SpeakerDataset(Dataset):
     """ Characterizes a dataset for Pytorch """
     def __init__(self, utt2path, utt2spk, spk2utt, loading_method, seq_len=None):
@@ -99,18 +98,17 @@ class SpeakerDataset(Dataset):
     def __len__(self):
         return len(self.spk2utt)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, spk):
         """ Returns one random utt of selected speaker """
-        
-        utt = np.random.choice(self.spk2utt[idx])
-
-        spk = self.utt2spk[utt]
+        utt = np.random.choice(self.spk2utt[spk])
+        feats = self.get_feats(utt)
+        return feats, spk, utt
+    
+    def get_feats(self, utt):
         feats = self.loading_method(self.utt2path[utt])
-
         if self.seq_len:
             feats = data_io.train_transform(feats, self.seq_len)
-
-        return feats, spk, utt
+        return feats
     
     def get_utt_feats(self):
         for utt, path in self.utt2path.items():
@@ -119,6 +117,13 @@ class SpeakerDataset(Dataset):
             if self.seq_len:
                 feats = data_io.train_transform(feats, self.seq_len)
             yield feats, utt
+
+class ContrastiveDataset(SpeakerDataset):
+
+    def __getitem__(self, spk):
+        utt1, utt2 = np.random.choice(self.spk2utt[spk], 2)
+        feats1, feats2 = self.get_feats(utt1), self.get_feats(utt2)
+        return feats1, feats2, spk
 
 # Recettes :
 def load_multiple_kaldi_metadata(ds_path):
@@ -156,6 +161,23 @@ def make_kaldi_train_ds(ds_path, seq_len=400):
     )
     return ds
 
+def make_kaldi_contrast_ds(ds_path, seq_len=400):
+    """ 
+    Make a SpeakerDataset from only the path of the kaldi dataset.
+    This function will use the files 'feats.scp', 'utt2spk' 'spk2utt'
+    present in ds_path to create the SpeakerDataset.
+    """
+    utt2spk, spk2utt, utt2path = load_multiple_kaldi_metadata(ds_path)
+
+    ds = ContrastiveDataset(
+        utt2path = utt2path,
+        utt2spk  = utt2spk,
+        spk2utt  = spk2utt,
+        loading_method = lambda path: torch.FloatTensor(read_mat(path)),
+        seq_len  = seq_len,
+    )
+    return ds
+
 def make_kaldi_trial_ds(ds_path, trials):
     """ 
     Make a SpeakerDataset from only the path of the kaldi dataset.
@@ -172,7 +194,7 @@ def make_kaldi_trial_ds(ds_path, trials):
     return ds
 
 if __name__ == "__main__":
-    ds = make_kaldi_train_ds(Path("exemples/metadata_no_sil/"))
+    ds = make_kaldi_contrast_ds(Path("exemples/metadata_no_sil/"))
     print(ds)
     for i in range(len(ds)):
         print(ds[i])

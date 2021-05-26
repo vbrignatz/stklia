@@ -23,9 +23,9 @@ from torch.utils.data import DataLoader
 import dataset
 from parser import fetch_config
 from cuda_test import cuda_test, get_device
-from train_resnet import train
+from train_resnet import train, train_contrastive, train_multitask
 from test_resnet import extract_and_score
-from models import resnet34, NeuralNetAMSM
+from models import resnet34, NeuralNetAMSM, ContrastLayer
 
 if __name__ == "__main__":
 
@@ -60,7 +60,8 @@ if __name__ == "__main__":
     # TRAIN
     if args.mode == "train":
         assert args.train_data_path, "No training dataset given in train mode"
-        ds_train = dataset.make_kaldi_train_ds(args.train_data_path, seq_len=args.max_seq_len)
+        ds_train = dataset.make_kaldi_contrast_ds(args.train_data_path, seq_len=args.max_seq_len)
+        # ds_train = dataset.make_kaldi_train_ds(args.train_data_path, seq_len=args.max_seq_len)
         dl_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
 
         if args.eval_data_path and args.eval_trials_path:
@@ -78,14 +79,21 @@ if __name__ == "__main__":
         logger.add(args.log_file, format="{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}", backtrace=False, diagnose=False)
 
         # Classifier definition
-        classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
-        classifier = classifier.to(device)
+        # classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
         logger.info("num_classes: " + str(ds_train.num_classes))
 
+        projection_head = ContrastLayer()
+        projection_head = projection_head.to(device)
+
+        classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
+        classifier = classifier.to(device)
+
         generator.train()
+        projection_head.train()
         classifier.train()
 
-        train(args, generator, classifier, dl_train, device, ds_val)
+        train_contrastive(args, generator, projection_head, dl_train, device, ds_val)
+        #         train_multitask(args, generator, classifier, projection_head, dl_train, device, ds_val)
 
     # TEST
     if args.mode == "test":
@@ -99,8 +107,7 @@ if __name__ == "__main__":
         else:
             print('use checkpoint {}'.format(args.checkpoint))
             g_path = args.checkpoints_dir / "g_{}.pt".format(args.checkpoint)
-            g_path_test = g_path
-
+            ph_path = args.checkpoints_dir / "c_{}.pt".format(args.checkpoint)
         
         generator.load_state_dict(torch.load(g_path), strict=False)
 

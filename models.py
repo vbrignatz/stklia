@@ -75,9 +75,6 @@ class ResNet(nn.Module):
                  norm_layer=None):
         super(ResNet, self).__init__()
 
-        # a dummy parameter to save the device
-        self.dummy_param = nn.Parameter(torch.empty(0))
-
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -150,7 +147,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
-        x = self.conv1(x.to(self.dummy_param.device))
+        # x = self.conv1(x.to(self.fc._parameters['weight'].device))
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         
@@ -262,3 +260,17 @@ class NeuralNetAMSM(nn.Module):
         output *= self.s
 
         return output
+
+
+class ContrastLayer(torch.nn.Module):
+    def __init__(self):
+        super(ContrastLayer, self).__init__()
+        self.layer =  nn.Sequential(
+                      nn.Linear(256, 256),
+                      nn.ReLU(),
+                    #   nn.BatchNorm1d(256),
+                      nn.Dropout(p=0.25)
+                    )
+
+    def forward(self, x):
+        return self.layer(x)
