@@ -23,8 +23,8 @@ from torch.utils.data import DataLoader
 import dataset
 from parser import fetch_config
 from cuda_test import cuda_test, get_device
-from train_resnet import train, train_contrastive
-from test_resnet import score_utt_utt, score_contrastive
+from train_resnet import train, train_contrastive, train_multitask
+from test_resnet import score_utt_utt#, score_contrastive
 from models import resnet34, NeuralNetAMSM, ContrastLayer
 
 if __name__ == "__main__":
@@ -57,13 +57,11 @@ if __name__ == "__main__":
     generator = resnet34(args)
     generator = generator.to(device)
 
-    classifier = ContrastLayer()
-    classifier = classifier.to(device)
-
     # TRAIN
     if args.mode == "train":
         assert args.train_data_path, "No training dataset given in train mode"
         ds_train = dataset.make_kaldi_contrast_ds(args.train_data_path, seq_len=args.max_seq_len)
+        # ds_train = dataset.make_kaldi_train_ds(args.train_data_path, seq_len=args.max_seq_len)
         dl_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=8)
 
         if args.eval_data_path and args.eval_trials_path:
@@ -84,10 +82,18 @@ if __name__ == "__main__":
         # classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
         logger.info("num_classes: " + str(ds_train.num_classes))
 
+        projection_head = ContrastLayer()
+        projection_head = projection_head.to(device)
+
+        classifier = NeuralNetAMSM(args.emb_size, ds_train.num_classes)
+        classifier = classifier.to(device)
+
         generator.train()
+        projection_head.train()
         classifier.train()
 
-        train_contrastive(args, generator, classifier, dl_train, device, ds_val)
+        train_contrastive(args, generator, projection_head, dl_train, device, ds_val)
+        #         train_multitask(args, generator, classifier, projection_head, dl_train, device, ds_val)
 
     # TEST
     if args.mode == "test":
@@ -104,7 +110,5 @@ if __name__ == "__main__":
             ph_path = args.checkpoints_dir / "c_{}.pt".format(args.checkpoint)
         
         generator.load_state_dict(torch.load(g_path), strict=False)
-        classifier.load_state_dict(torch.load(ph_path), strict=False)
-
-        score_contrastive(generator, classifier, ds_test)
-        # score_utt_utt(generator, ds_test)
+        # score_contrastive(generator, classifier, ds_test)
+        score_utt_utt(generator, ds_test)

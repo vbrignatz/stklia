@@ -265,7 +265,12 @@ class NeuralNetAMSM(nn.Module):
 class ContrastLayer(torch.nn.Module):
     def __init__(self):
         super(ContrastLayer, self).__init__()
-        self.layer =  nn.Linear(256, 256)
+        self.layer =  nn.Sequential(
+                      nn.Linear(256, 256),
+                      nn.ReLU(),
+                    #   nn.BatchNorm1d(256),
+                      nn.Dropout(p=0.25)
+                    )
 
     def forward(self, x):
         return self.layer(x)
