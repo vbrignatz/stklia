@@ -86,7 +86,7 @@ def score_xvectors(embedings_1, embedings_2, targets, mindcf=False):
         res = {"eer":eer}
     return res
 
-def extract_and_score(generator, ds_test, mindcf=False, output=None):
+def extract_and_score(generator, ds_test, mindcf=False, output="fabiol_baseline"):
     """ 
         Score the model on the trials of type :
         <utt> <utt> 0/1
@@ -101,7 +101,7 @@ def extract_and_score(generator, ds_test, mindcf=False, output=None):
     utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
 
     if output != None:
-        save_xvectors(filename, utt2xv_norm)
+        save_xvectors(output, utt2xv_norm, file_format="ark")
 
     all_res = {}
     for i in range(len(ds_test)):

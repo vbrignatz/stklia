@@ -6,15 +6,35 @@ python extract.py --modeldir path --checkpoint 6969 --data path
 import torch
 import argparse
 import kaldi_io
+import subprocess
 
 from tqdm import tqdm
 from pathlib import Path
-
 
 import dataset
 from parser import fetch_config
 from models import resnet34
 from cuda_test import cuda_test, get_device
+
+def save_xvectors(filename, utt2xv, file_format="ark"):
+    if file_format == "ark":
+        ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{filename}.ark,{filename}.ascii.scp'
+        mode = "wb"
+    elif file_format == "txt":
+        ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{filename}.txt'
+        mode = "w"
+    else:
+        raise NotImplementedError(f"Can't save xvector in {file_format} format yet.")
+
+    with kaldi_io.open_or_fd(ark_scp_xvector, mode) as f:
+        for utt, xv in utt2xv.items():
+            kaldi_io.write_vec_flt(f, xv, key=utt)
+    
+    if file_format == "ark":
+        iconv = f"iconv -f iso-8859-15 -t utf-8 {filename}.ascii.scp -o {filename}.scp".split(' ')
+        rm = f"rm {filename}.ascii.scp".split(' ')
+        subprocess.run(iconv)
+        subprocess.run(rm)
 
 if __name__ == "__main__":
     # Arguments parsing
@@ -81,16 +101,4 @@ if __name__ == "__main__":
         embeds = generator(feats).cpu().numpy()
         utt2xv[utt] = embeds
 
-    save_xvectors(f"{args.out_dir}/xvectors.{args.format}", utt2xv)
-    
-def save_xvectors(filename, utt2xv):
-    if filename[-3:] == "ark":
-        ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{filename},{filename[-3:]}scp'
-        mode = "wb"
-    if filename[-3:] == "txt":
-        ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{filename}'
-        mode = "w"
-
-    with kaldi_io.open_or_fd(ark_scp_xvector, mode) as f:
-        for utt, xv in utt2xv.items():
-            kaldi_io.write_vec_flt(f, xv, key=utt)
+    save_xvectors(f"{args.out_dir}/xvectors", utt2xv, args.format)
