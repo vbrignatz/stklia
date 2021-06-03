@@ -101,7 +101,7 @@ def extract_and_score(generator, ds_test, mindcf=False, output="fabiol_baseline"
     utt2xv_norm = {k:v for k, v in zip(utt2xv.keys(), xv)}
 
     if output != None:
-        save_xvectors(output, utt2xv_norm, file_format="ark")
+        save_xvectors(output, utt2xv_norm, file_format="txt")
 
     all_res = {}
     for i in range(len(ds_test)):

@@ -21,7 +21,7 @@ def save_xvectors(filename, utt2xv, file_format="ark"):
         ark_scp_xvector = f'ark:| copy-vector ark:- ark,scp:{filename}.ark,{filename}.ascii.scp'
         mode = "wb"
     elif file_format == "txt":
-        ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{filename}.txt'
+        ark_scp_xvector = f'ark:| copy-vector ark:- ark,t:{filename}.ascii.txt'
         mode = "w"
     else:
         raise NotImplementedError(f"Can't save xvector in {file_format} format yet.")
@@ -33,8 +33,11 @@ def save_xvectors(filename, utt2xv, file_format="ark"):
     if file_format == "ark":
         iconv = f"iconv -f iso-8859-15 -t utf-8 {filename}.ascii.scp -o {filename}.scp".split(' ')
         rm = f"rm {filename}.ascii.scp".split(' ')
-        subprocess.run(iconv)
-        subprocess.run(rm)
+    if file_format == "txt":
+        iconv = f"iconv -f iso-8859-15 -t utf-8 {filename}.ascii.txt -o {filename}.txt".split(' ')
+        rm = f"rm {filename}.ascii.txt".split(' ')
+    subprocess.run(iconv)
+    subprocess.run(rm)
 
 if __name__ == "__main__":
     # Arguments parsing
