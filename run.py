@@ -92,8 +92,8 @@ if __name__ == "__main__":
         projection_head.train()
         classifier.train()
 
-        # train_contrastive(args, generator, projection_head, dl_train, device, ds_val)
-        train_multitask(args, generator, classifier, projection_head, dl_train, device, ds_val)
+        train_contrastive(args, generator, projection_head, dl_train, device, ds_val)
+        # train_multitask(args, generator, classifier, projection_head, dl_train, device, ds_val)
 
     # TEST
     if args.mode == "test":
