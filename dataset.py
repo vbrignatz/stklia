@@ -120,38 +120,38 @@ class SpeakerDataset(Dataset):
 
 class ContrastiveDataset(SpeakerDataset):
 
-    def __init__(self, utt2path, utt2spk, spk2utt, loading_method, seq_len=None):
+    # def __init__(self, utt2path, utt2spk, spk2utt, loading_method, seq_len=None):
 
-        self.utt2path = utt2path
-        self.loading_method = loading_method
-        self.seq_len = seq_len
+    #     self.utt2path = utt2path
+    #     self.loading_method = loading_method
+    #     self.seq_len = seq_len
 
-        speakers = list(spk2utt.keys())
-        spkrs_utt_sorted = list(utt2spk.values())
+    #     speakers = list(spk2utt.keys())
+    #     spkrs_utt_sorted = list(utt2spk.values())
 
-        label_enc = LabelEncoder()
-        speakers = label_enc.fit_transform(speakers)
-        spkrs_utt_sorted = label_enc.transform(spkrs_utt_sorted)
+    #     label_enc = LabelEncoder()
+    #     speakers = label_enc.fit_transform(speakers)
+    #     spkrs_utt_sorted = label_enc.transform(spkrs_utt_sorted)
 
-        self.spk2utt = {k: v for k, v in zip(speakers, spk2utt.values())}
-        self.utt2spk = {k: v for k, v in zip(utt2spk.keys(), spkrs_utt_sorted)}
+    #     self.spk2utt = {k: v for k, v in zip(speakers, spk2utt.values())}
+    #     self.utt2spk = {k: v for k, v in zip(utt2spk.keys(), spkrs_utt_sorted)}
 
-        self.num_classes = len(label_enc.classes_)
+    #     self.num_classes = len(label_enc.classes_)
 
-        clean_utts = [list(set([utt2clean(utt) for utt in utts])) for utts in spk2utt.values()]
-        self.clean_spk2utt = {k: v for k, v in zip(speakers, clean_utts)}
-
-    def __getitem__(self, spk):
-        utt_clean = np.random.choice(self.clean_spk2utt[spk], 1)[0]
-        noises = np.random.choice(["-reverb", "-noise", "-babble", "-music"], 2)
-        utt1, utt2  = utt_clean + noises[0], utt_clean + noises[1]
-        feats1, feats2 = self.get_feats(utt1), self.get_feats(utt2)
-        return feats1, feats2, spk
+    #     clean_utts = [list(set([utt2clean(utt) for utt in utts])) for utts in spk2utt.values()]
+    #     self.clean_spk2utt = {k: v for k, v in zip(speakers, clean_utts)}
 
     # def __getitem__(self, spk):
-    #     utt1, utt2 = np.random.choice(self.spk2utt[spk], 2)
+    #     utt_clean = np.random.choice(self.clean_spk2utt[spk], 1)[0]
+    #     noises = np.random.choice(["-reverb", "-noise", "-babble", "-music"], 2)
+    #     utt1, utt2  = utt_clean + noises[0], utt_clean + noises[1]
     #     feats1, feats2 = self.get_feats(utt1), self.get_feats(utt2)
     #     return feats1, feats2, spk
+
+    def __getitem__(self, spk):
+        utt1, utt2 = np.random.choice(self.spk2utt[spk], 2)
+        feats1, feats2 = self.get_feats(utt1), self.get_feats(utt2)
+        return feats1, feats2, spk
 
 # Recettes :
 def load_multiple_kaldi_metadata(ds_path):

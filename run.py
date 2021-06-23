@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 import dataset
 from parser import fetch_config
 from cuda_test import cuda_test, get_device
-from train_resnet import train, train_contrastive, train_multitask
+from train_resnet import train, train_contrastive#, train_multitask
 from test_resnet import extract_and_score
 from models import resnet34, NeuralNetAMSM, ContrastLayer
 
@@ -111,4 +111,4 @@ if __name__ == "__main__":
         
         generator.load_state_dict(torch.load(g_path), strict=False)
 
-        extract_and_score(generator, ds_test)
+        extract_and_score(generator, ds_test, mindcf=True)

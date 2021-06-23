@@ -247,7 +247,7 @@ def train_contrastive(args, generator, projection_head, dataloader_train, device
          # Saving checkpoint
         if iterations % args.checkpoint_interval == 0:
             
-            for model, modelstr in [(generator, 'g'), (projection_head, 'c')]:
+            for model, modelstr in [(generator, 'g'), (projection_head, 'ph')]:
                 model.eval().cpu()
                 cp_model_path = args.checkpoints_dir / f"{modelstr}_{iterations}.pt"
                 torch.save(model.state_dict(), cp_model_path)
@@ -278,9 +278,8 @@ def train_contrastive(args, generator, projection_head, dataloader_train, device
         torch.save(model.state_dict(), cp_model_path)
     logger.success(f'Training complete in {time.process_time()-start} seconds')
 
-
-@logger.catch
-def train_multitask(args, generator, classifier, projection_head, dataloader_train, device, dataset_validation=None):
+# @logger.catch
+# def train_multitask(args, generator, classifier, projection_head, dataloader_train, device, dataset_validation=None):
     # Tensorflow logger
     writer = SummaryWriter(comment='_{}'.format(args.model_dir.name))
 
