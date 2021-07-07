@@ -29,7 +29,7 @@ git clone https://github.com/vbrignatz/stklia.git
 cd stklia
 conda create -n stklia-venv python=3.8
 conda activate stklia-venv
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
+conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
 pip install -r requirement.txt
 ```
 
