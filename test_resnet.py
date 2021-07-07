@@ -94,7 +94,9 @@ def extract_and_score(generator, ds_test, mindcf=False, output=None):
         Save the extracted xv into output filename is precised (can be .ark or .txt).
     """
 
+    generator.eval()
     utt2xv = compute_unique_utt_xvec(generator, ds_test)
+    generator.train()
 
     xv = np.vstack(list(utt2xv.values()))
     xv = normalize(xv, axis=1)
