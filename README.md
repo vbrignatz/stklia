@@ -25,7 +25,7 @@ To install the Simple-tklia toolkit, do the following steps:
 The commands are as below :
 
 ```
-git clone https://github.com/vbrignatz/stklia.git
+git clone -b contrast --single-branch https://github.com/vbrignatz/stklia.git
 cd stklia
 conda create -n stklia-venv python=3.8
 conda activate stklia-venv

@@ -79,10 +79,8 @@ def score_xvectors(embedings_1, embedings_2, targets, mindcf=False):
     if mindcf:
         mindcf1 = compute_min_dcf(fpr, tpr, thresholds, p_target=0.01)
         mindcf2 = compute_min_dcf(fpr, tpr, thresholds, p_target=0.001)
-        print(f'EER :{eer:.4f}%  minDFC p=0.01 :{mindcf1}  minDFC p=0.001 :{mindcf2}  ')
-        res = {"eer":eer, "mindcf1":mindcf1, "mindcf2":mindcf2}
+        res = {"eer":eer, "minDCF(p=0.01)":mindcf1, "minDCF(p=0.001)":mindcf2}
     else:
-        print(f'EER :{eer:.4f}%')
         res = {"eer":eer}
     return res
 
@@ -113,6 +111,12 @@ def extract_and_score(generator, ds_test, mindcf=False, output=None):
         emb_enroll = np.array([utt2xv_norm[k] for k in c_trial.enrolls])
         emb_test = np.array([utt2xv_norm[k] for k in c_trial.tests])
 
-        all_res[c_trial.name] = score_xvectors(emb_enroll, emb_test, targets, mindcf)
+        
+        res = score_xvectors(emb_enroll, emb_test, targets, mindcf)
+        all_res[c_trial.name] = res
+        print(c_trial.name, end=": ")
+        for k, v in res.items():
+            print(f"{k}={v} ", end="")
+        print()
     return all_res
 

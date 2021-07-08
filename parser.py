@@ -27,7 +27,6 @@ def fetch_config(args, verbose=False):
     config = configparser.ConfigParser()
     config.read(args.cfg)
 
-    use_contrastive
     args.use_contrastive     = config['Hyperparams'].getboolean('use_contrastive', fallback=False)
     args.generator_lr        = config['Hyperparams'].getfloat('generator_lr', fallback=0.2)
     args.classifier_lr       = config['Hyperparams'].getfloat('classifier_lr', fallback=0.2)
