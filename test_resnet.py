@@ -86,7 +86,7 @@ def score_xvectors(embedings_1, embedings_2, targets, mindcf=False):
         res = {"eer":eer}
     return res
 
-def extract_and_score(generator, ds_test, mindcf=False, output="fabiol_baseline"):
+def extract_and_score(generator, ds_test, mindcf=False, output=None):
     """ 
         Score the model on the trials of type :
         <utt> <utt> 0/1
