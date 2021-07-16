@@ -84,7 +84,7 @@ def score_xvectors(embedings_1, embedings_2, targets, mindcf=False):
         res = {"eer":eer}
     return res
 
-def extract_and_score(generator, ds_test, mindcf=False, output=None):
+def extract_and_score(generator, ds_test, mindcf=False, output=None, print_out=False):
     """ 
         Score the model on the trials of type :
         <utt> <utt> 0/1
@@ -114,9 +114,10 @@ def extract_and_score(generator, ds_test, mindcf=False, output=None):
         
         res = score_xvectors(emb_enroll, emb_test, targets, mindcf)
         all_res[c_trial.name] = res
-        print(c_trial.name, end=": ")
-        for k, v in res.items():
-            print(f"{k}={v} ", end="")
-        print()
+        if print_out:
+            print(c_trial.name, end=": ")
+            for k, v in res.items():
+                print(f"{k}={v} ", end="")
+            print()
     return all_res
 
